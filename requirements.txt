@@ -1,4 +1,4 @@
-ConfigParser
 datetime
 requests
 simplejson
+S3Connection

@@ -1,17 +1,20 @@
 # forked
-import ConfigParser
+# import ConfigParser
 import datetime
+import urllib
 import urllib2
 import requests
 import ssl
 import sys
 import simplejson
 import time
+import S3Connection
 
-CONFIG_FILE_NAME = 'config.ini'
-INSIGHT_SECTION = 'insight'
-BEEMINDER_SECTION = 'beeminder'
 
+# insight_username = S3Connection(os.environ['insight_username'], os.environ['S3_SECRET'])
+
+
+# CONFIG_FILE_NAME = 'config.ini'
 INSIGHT_LOGIN_URL = "https://profile.insighttimer.com/profile_signin/request"
 INSIGHT_CSV_URL = "https://profile.insighttimer.com/sessions/export"
 
@@ -22,15 +25,18 @@ BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&%s"
 # print "BEE_POST_DATAPOINTS_URL  %s" %BEE_POST_DATAPOINTS_URL
 
 def get_insight_data():
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(INSIGHT_SECTION, "username")
-    password = config.get(INSIGHT_SECTION, "password")
-    
+    # username = config.get("app", "insight_username")
+    # password = config.get("app", "insight_password")
+
+    username = S3Connection(os.environ['INSIGHT_USERNAME'])
+    password = S3Connection(os.environ['INSIGHT_PASSWORD'])
+
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
-    login_data = urllib2.urlencode(values)
+    login_data = urllib.urlencode(values)
 
     # Start a session so we can have persistent cookies
     session = requests.session()
@@ -39,15 +45,19 @@ def get_insight_data():
     return r.text.split('\n')
 
 def post_beeminder_entry(entry):
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "username")
-    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
-    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
+    # username = config.get("app", "beeminder_username")
+    # goal_name = config.get("app", "beeminder_goal_name")
+    # auth_token = config.get("app", "beeminder_auth_token")
+
+    username = S3Connection(os.environ['BEEMINDER_USERNAME'])
+    goal_name = S3Connection(os.environ['BEEMINDER_GOAL_NAME'])
+    auth_token = S3Connection(os.environ['BEEMINDER_AUTH_TOKEN'])
 
     session = requests.session()
-    comment_encoded = urllib2.urlencode({"comment": entry["comment"]})
+    comment_encoded = urllib.urlencode({"comment": entry["comment"]})
     full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], comment_encoded)
     # print "full post url:  %s" %full_url
 
@@ -57,12 +67,12 @@ def post_beeminder_entry(entry):
     print "Posted entry: %s" % r.text
 
 def get_beeminder():
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "username")
-    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
-    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
+    username = S3Connection(os.environ['BEEMINDER_USERNAME'])
+    goal_name = S3Connection(os.environ['BEEMINDER_GOAL_NAME'])
+    auth_token = S3Connection(os.environ['BEEMINDER_AUTH_TOKEN'])
     bee_data_url = BEE_GET_DATAPOINTS_URL % (username, goal_name, auth_token)
     # print "Bee data url: %s" % bee_data_url
 
