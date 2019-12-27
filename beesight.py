@@ -19,8 +19,8 @@ INSIGHT_CSV_URL = "https://profile.insighttimer.com/sessions/export"
 BEE_BASE_URL = "https://www.beeminder.com/api/v1/"
 BEE_GET_DATAPOINTS_URL = BEE_BASE_URL  + "users/%s/goals/%s/datapoints.json?auth_token=%s"
 # POST_MANY_DATAPOINTS_URL = BEE_BASE_URL  + "users/%s/goals/%s/datapoints/create_all.json?auth_token=%s"
-BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&comment=%s"
-print "BEE_POST_DATAPOINTS_URL  %s" %BEE_POST_DATAPOINTS_URL
+BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&%s"
+# print "BEE_POST_DATAPOINTS_URL  %s" %BEE_POST_DATAPOINTS_URL
 
 def get_insight_data():
     config = ConfigParser.RawConfigParser()
@@ -48,9 +48,13 @@ def post_beeminder_entry(entry):
     goal_name = config.get(BEEMINDER_SECTION, "goal_name")
 
     session = requests.session()
-    full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], entry["comment"])
-    r = session.post(full_url)
+    comment_encoded = urllib.urlencode({"comment": entry["comment"]})
+    full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], comment_encoded)
+    # print "full post url:  %s" %full_url
 
+    # print "comment_encoded: %s" % comment_encoded
+
+    r = session.post(full_url)
     print "Posted entry: %s" % r.text
 
 def get_beeminder():
@@ -119,26 +123,27 @@ if __name__ == "__main__":
 
     # get dates which beeminder doesn't know about yet
     bee_sorted = sorted(set(beeminder_dates))
-    for d in bee_sorted:
-      print "bee sorted: %s" %d
+    # for d in bee_sorted:
+    #   print "bee sorted: %s" %d
 
     insight_sorted = sorted(set(insight_dates))
-    for d in insight_sorted:
-      print "insight sorted: %s" %d
+    # for d in insight_sorted:
+    #   print "insight sorted: %s" %d
+
     inter = list(set(insight_dates) - set(beeminder_dates))
-    for d in inter:
-      print "inter list date: %s" % d
+    # for d in inter:
+    #   print "inter list date: %s" % d
 
     new_dates = sorted(list(set(insight_dates) - set(beeminder_dates)))
     print "new dates len: %s" % len(new_dates)
-    for d in new_dates:
-      print "date in new_dates: %s" % d
+    # for d in new_dates:
+    #   print "date in new_dates: %s" % d
 
     # create beeminder-friendly datapoints
-    new_datapoints = [{"timestamp": d, "value":1.0, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"} for d in new_dates]
-    for d in new_datapoints:
-        print "datapoint in new_datapoints: %s" % d
+    new_datapoints = [{"timestamp": d, "value":1, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"} for d in new_dates]
+    # for d in new_datapoints:
+    #     print "datapoint in new_datapoints: %s" % d
     print "%s datapoints to post" % len(new_datapoints)
 
     # for dp in new_datapoints:
-    #     post_beeminder_entry(dp)
+    post_beeminder_entry({"timestamp": 1577419913, "value":1, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"})
