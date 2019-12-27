@@ -1,7 +1,6 @@
 # forked
 import ConfigParser
 import datetime
-import urllib
 import urllib2
 import requests
 import ssl
@@ -31,7 +30,7 @@ def get_insight_data():
     
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
-    login_data = urllib.urlencode(values)
+    login_data = urllib2.urlencode(values)
 
     # Start a session so we can have persistent cookies
     session = requests.session()
@@ -48,7 +47,7 @@ def post_beeminder_entry(entry):
     goal_name = config.get(BEEMINDER_SECTION, "goal_name")
 
     session = requests.session()
-    comment_encoded = urllib.urlencode({"comment": entry["comment"]})
+    comment_encoded = urllib2.urlencode({"comment": entry["comment"]})
     full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], comment_encoded)
     # print "full post url:  %s" %full_url
 
