@@ -29,8 +29,8 @@ def get_insight_data():
     config = ConfigParser.RawConfigParser()
     config.read(CONFIG_FILE_NAME)
 
-    username = config.get(INSIGHT_SECTION, "username")
-    password = config.get(INSIGHT_SECTION, "password")
+    username = config.get(INSIGHT_SECTION, "INSIGHT_USERNAME")
+    password = config.get(INSIGHT_SECTION, "INSIGHT_PASSWORD")
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
@@ -47,9 +47,9 @@ def post_beeminder_entry(entry):
     config = ConfigParser.RawConfigParser()
     config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "username")
-    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
-    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
+    username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
+    auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
+    goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
 
     session = requests.session()
     full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], entry["comment"], entry["requestid"])
@@ -62,9 +62,9 @@ def get_beeminder():
     config = ConfigParser.RawConfigParser()
     config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "username")
-    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
-    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
+    username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
+    auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
+    goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
     bee_data_url = BEE_GET_DATAPOINTS_URL % (username, goal_name, auth_token)
 
     context = ssl._create_unverified_context()
