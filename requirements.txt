@@ -1,6 +1,5 @@
 ConfigParser
 datetime
-urllib2
 requests
 ssl
 sys
