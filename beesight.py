@@ -1,5 +1,6 @@
 # mine
 import ConfigParser
+import calendar
 import datetime
 import urllib
 import urllib2
@@ -34,23 +35,16 @@ def get_insight_data():
 
     username = config.get(INSIGHT_SECTION, "username")
     password = config.get(INSIGHT_SECTION, "password")
-    
-    # GET THESE FROM HEROKU ENV VAR
-    # username = "email@liquidsilvers.com"
-    # password = "hottub"
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
     login_data = urllib.urlencode(values)
-    # print "insight login: %s" % login_data
 
     # Start a session so we can have persistent cookies
     session = requests.session()
     r = session.post(INSIGHT_LOGIN_URL, data=login_data)
     r = session.get(INSIGHT_CSV_URL)
     arr = r.text.split('\n')
-    # for a in arr:
-    #   print "insight line: %s" %a
     return arr
 
 def post_beeminder_entry(entry):
@@ -82,39 +76,78 @@ def get_beeminder():
     the_page = response.read()
     return the_page
 
-def beeminder_to_one_per_day(beeminder_output):
+def beeminder_to_one_per_timestamp(beeminder_output):
     bm = simplejson.loads(beeminder_output)
 
     s = {}
 
     # skip first two header lines
     for entry in bm:
+        print "entry in beeminder %s" % entry
         ts = entry['timestamp']
-        dt = datetime.datetime.fromtimestamp(ts)
+        # dt = datetime.datetime.fromtimestamp(ts)
+        # d = dt.date()
 
-        # need to move back one day from the beeminder time, because it
-        # pushes the day forward to 01:00 on day + 1, at least in JST
-        d = dt.date()
-
-        if not d in s:
-            s[d] = 1
+        if not ts in s:
+            s[ts] = 1
 
     return s.keys()
 
-def csv_to_one_per_day(csv_lines):
+def csv_to_one_per_timestamp(csv_lines):
     s = {}
 
     # skip first two header lines
     for l in csv_lines[2:]:
-        datetime_part = l.split(",")[0]
-        date_part = datetime_part.split(" ")[0]
-        date_parts = date_part.split("/")
-        if len(date_parts) == 3:
-            m, d, y = map(int, date_parts)
-            dt = datetime.date(y, m, d)
+        if l:
+            datetime_part = l.split(",")[0]
+            print "datetime_part %s" % datetime_part
+            date_part = datetime_part.split(" ")[0]
+            time_part = datetime_part.split(" ")[1]
 
-            if not dt in s:
-                s[dt] = 0
+            date_parts = date_part.split("/")
+            if len(date_parts) == 3:
+                m, d, y = map(int, date_parts)
+                dt = datetime.date(y, m, d)
+                if not dt in s:
+                    s[dt] = 0
+
+            time_parts = time_part.split(":")
+            if len(time_parts) == 3:
+                hour, min, sec = map(int, time_parts)
+                # date_part = datetime_part.split(" ")[0]
+                # time_part = datetime_part.split(" ")[1]
+
+                # date_split = date_part.split("/")
+                # time_split = time_part.split(":")
+                # print "date_split %s" % date_split
+                # print "time_split %s" % time_split        
+
+                # if len(date_split) == 3 and len(time_split) == 3:
+                    
+
+                #     yr = int(date_split[2])
+                #     print "yr %s" % yr
+
+                #     mo = int(date_split[0])
+                #     print "month %s" % mo
+
+                #     day = int(date_split[1])
+                #     print "day %s" % day
+
+                #     hour = int(time_split[0])
+                print "hour %s" % hour
+
+                #     min = int(time_split[1])
+                print "min %s" % min
+
+                #     sec = int(time_split[2])
+                print "second %s" % sec
+
+                #     test = datetime.datetime(yr, mo, day, hour, min, sec)
+                #     print "test datetime %s" % test
+                #     print "test timezone %s" % test.tzinfo
+                #     test_timestamp = calendar.timegm(test.utctimetuple())
+                #     print "test test_timestamp %s" % test_timestamp
 
     return s.keys()
 
@@ -124,11 +157,11 @@ def date_to_jp_timestamp(dt):
 
 if __name__ == "__main__":
     # get dates of days meditated, from insight
-    insight_dates = csv_to_one_per_day(get_insight_data())
+    insight_dates = csv_to_one_per_timestamp(get_insight_data())
     print "%s days meditated according to insighttimer.com" % len(insight_dates)
 
     # get dates of days meditated, from beeminder
-    beeminder_dates = beeminder_to_one_per_day(get_beeminder())
+    beeminder_dates = beeminder_to_one_per_timestamp(get_beeminder())
     print "%s datapoints in beeminder" % len(beeminder_dates)
 
     # get dates which beeminder doesn't know about yet
