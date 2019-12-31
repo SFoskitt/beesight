@@ -1,7 +1,6 @@
 ConfigParser
 datetime
 requests
-ssl
 sys
 simplejson
 time
