@@ -27,8 +27,8 @@ def get_insight_data():
     # username = config.get(INSIGHT_SECTION, "INSIGHT_USERNAME")
     # password = config.get(INSIGHT_SECTION, "INSIGHT_PASSWORD")
 
-    username = os.environ.get("INSIGHT_USERNAME")
-    password = os.environ.get("INSIGHT_PASSWORD")
+    username = os.environ.get["INSIGHT_USERNAME"]
+    password = os.environ.get["INSIGHT_PASSWORD"]
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
@@ -49,9 +49,9 @@ def post_beeminder_entry(entry):
     # auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
     # goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
 
-    username = os.environ("BEEMINDER_USERNAME")
-    auth_token = os.environ("BEEMINDER_AUTH_TOKEN")
-    goal_name = os.environ("BEEMINDER_GOAL_NAME")
+    username = os.environ["BEEMINDER_USERNAME"]
+    auth_token = os.environ["BEEMINDER_AUTH_TOKEN"]
+    goal_name = os.environ["BEEMINDER_GOAL_NAME"]
 
     session = requests.session()
     full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], entry["comment"], entry["requestid"])
@@ -67,9 +67,9 @@ def get_beeminder():
     # username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
     # auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
     # goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
-    username = os.environ("BEEMINDER_USERNAME")
-    auth_token = os.environ("BEEMINDER_AUTH_TOKEN")
-    goal_name = os.environ("BEEMINDER_GOAL_NAME")
+    username = os.environ["BEEMINDER_USERNAME"]
+    auth_token = os.environ["BEEMINDER_AUTH_TOKEN"]
+    goal_name = os.environ["BEEMINDER_GOAL_NAME"]
 
     bee_data_url = BEE_GET_DATAPOINTS_URL % (username, goal_name, auth_token)
 
