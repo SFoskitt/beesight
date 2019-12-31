@@ -27,8 +27,8 @@ def get_insight_data():
     # username = config.get(INSIGHT_SECTION, "INSIGHT_USERNAME")
     # password = config.get(INSIGHT_SECTION, "INSIGHT_PASSWORD")
 
-    username = os.environ.get["INSIGHT_USERNAME"]
-    password = os.environ.get["INSIGHT_PASSWORD"]
+    username = os.environ["INSIGHT_USERNAME"]
+    password = os.environ["INSIGHT_PASSWORD"]
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
