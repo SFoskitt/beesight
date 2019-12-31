@@ -1,4 +1,10 @@
+ConfigParser
+calendar
 datetime
+urllib
+urllib2
 requests
+ssl
+sys
 simplejson
-S3Connection
+time

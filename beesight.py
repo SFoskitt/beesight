@@ -1,5 +1,6 @@
-# forked
-# import ConfigParser
+# mine
+import ConfigParser
+import calendar
 import datetime
 import urllib
 import urllib2
@@ -8,31 +9,28 @@ import ssl
 import sys
 import simplejson
 import time
-import S3Connection
 
+# complain on config file issues
+# complain on bad login
+# don't hardcode timezone to japan
 
-# insight_username = S3Connection(os.environ['insight_username'], os.environ['S3_SECRET'])
+CONFIG_FILE_NAME = 'config.ini'
+INSIGHT_SECTION = 'insight'
+BEEMINDER_SECTION = 'beeminder'
 
-
-# CONFIG_FILE_NAME = 'config.ini'
 INSIGHT_LOGIN_URL = "https://profile.insighttimer.com/profile_signin/request"
 INSIGHT_CSV_URL = "https://profile.insighttimer.com/sessions/export"
 
 BEE_BASE_URL = "https://www.beeminder.com/api/v1/"
 BEE_GET_DATAPOINTS_URL = BEE_BASE_URL  + "users/%s/goals/%s/datapoints.json?auth_token=%s"
-# POST_MANY_DATAPOINTS_URL = BEE_BASE_URL  + "users/%s/goals/%s/datapoints/create_all.json?auth_token=%s"
-BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&%s"
-# print "BEE_POST_DATAPOINTS_URL  %s" %BEE_POST_DATAPOINTS_URL
+BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&comment=%s&requestid=%s"
 
 def get_insight_data():
-    # config = ConfigParser.RawConfigParser()
-    # config.read(CONFIG_FILE_NAME)
+    config = ConfigParser.RawConfigParser()
+    config.read(CONFIG_FILE_NAME)
 
-    # username = config.get("app", "insight_username")
-    # password = config.get("app", "insight_password")
-
-    username = S3Connection(os.environ['INSIGHT_USERNAME'])
-    password = S3Connection(os.environ['INSIGHT_PASSWORD'])
+    username = config.get(INSIGHT_SECTION, "username")
+    password = config.get(INSIGHT_SECTION, "password")
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
@@ -42,46 +40,39 @@ def get_insight_data():
     session = requests.session()
     r = session.post(INSIGHT_LOGIN_URL, data=login_data)
     r = session.get(INSIGHT_CSV_URL)
-    return r.text.split('\n')
+    arr = r.text.split('\n')
+    return arr
 
 def post_beeminder_entry(entry):
-    # config = ConfigParser.RawConfigParser()
-    # config.read(CONFIG_FILE_NAME)
+    config = ConfigParser.RawConfigParser()
+    config.read(CONFIG_FILE_NAME)
 
-    # username = config.get("app", "beeminder_username")
-    # goal_name = config.get("app", "beeminder_goal_name")
-    # auth_token = config.get("app", "beeminder_auth_token")
-
-    username = S3Connection(os.environ['BEEMINDER_USERNAME'])
-    goal_name = S3Connection(os.environ['BEEMINDER_GOAL_NAME'])
-    auth_token = S3Connection(os.environ['BEEMINDER_AUTH_TOKEN'])
+    username = config.get(BEEMINDER_SECTION, "username")
+    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
+    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
 
     session = requests.session()
-    comment_encoded = urllib.urlencode({"comment": entry["comment"]})
-    full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], comment_encoded)
-    # print "full post url:  %s" %full_url
-
-    # print "comment_encoded: %s" % comment_encoded
+    full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], entry["comment"], entry["requestid"])
+    print "full_url %s" % full_url
 
     r = session.post(full_url)
     print "Posted entry: %s" % r.text
 
 def get_beeminder():
-    # config = ConfigParser.RawConfigParser()
-    # config.read(CONFIG_FILE_NAME)
+    config = ConfigParser.RawConfigParser()
+    config.read(CONFIG_FILE_NAME)
 
-    username = S3Connection(os.environ['BEEMINDER_USERNAME'])
-    goal_name = S3Connection(os.environ['BEEMINDER_GOAL_NAME'])
-    auth_token = S3Connection(os.environ['BEEMINDER_AUTH_TOKEN'])
+    username = config.get(BEEMINDER_SECTION, "username")
+    auth_token = config.get(BEEMINDER_SECTION, "auth_token")
+    goal_name = config.get(BEEMINDER_SECTION, "goal_name")
     bee_data_url = BEE_GET_DATAPOINTS_URL % (username, goal_name, auth_token)
-    # print "Bee data url: %s" % bee_data_url
 
     context = ssl._create_unverified_context()
     response = urllib2.urlopen(bee_data_url, context=context)
     the_page = response.read()
     return the_page
 
-def beeminder_to_one_per_day(beeminder_output):
+def beeminder_to_one_per_timestamp(beeminder_output):
     bm = simplejson.loads(beeminder_output)
 
     s = {}
@@ -89,70 +80,56 @@ def beeminder_to_one_per_day(beeminder_output):
     # skip first two header lines
     for entry in bm:
         ts = entry['timestamp']
-        dt = datetime.datetime.fromtimestamp(ts)
 
-        # need to move back one day from the beeminder time, because it
-        # pushes the day forward to 01:00 on day + 1, at least in JST
-        d = dt.date()
-
-        if not d in s:
-            s[d] = 1
+        if not ts in s:
+            s[ts] = 1
 
     return s.keys()
 
-def csv_to_one_per_day(csv_lines):
+def csv_to_one_per_timestamp(csv_lines):
     s = {}
 
     # skip first two header lines
     for l in csv_lines[2:]:
-        datetime_part = l.split(",")[0]
-        date_part = datetime_part.split(" ")[0]
-        date_parts = date_part.split("/")
-        if len(date_parts) == 3:
-            m, d, y = map(int, date_parts)
-            dt = datetime.date(y, m, d)
+        if l:
+            datetime_part = l.split(",")[0]
+            date_part = datetime_part.split(" ")[0]
+            time_part = datetime_part.split(" ")[1]
 
-            if not dt in s:
-                s[dt] = 0
+            date_parts = date_part.split("/")
+            if len(date_parts) == 3:
+                m, d, y = map(int, date_parts)
+                dt = datetime.date(y, m, d)
+
+            time_parts = time_part.split(":")
+            if len(time_parts) == 3:
+                hour, min, sec = map(int, time_parts)
+                test = datetime.datetime(y, m, d, hour, min, sec)
+                ts = calendar.timegm(test.utctimetuple())
+
+                if not ts in s:
+                    s[ts] = 0
 
     return s.keys()
 
-def date_to_jp_timestamp(dt):
-    d = datetime.datetime.combine(dt, datetime.time())
-    return int(time.mktime(d.timetuple()))
-
 if __name__ == "__main__":
     # get dates of days meditated, from insight
-    insight_dates = csv_to_one_per_day(get_insight_data())
+    insight_dates = csv_to_one_per_timestamp(get_insight_data())
     print "%s days meditated according to insighttimer.com" % len(insight_dates)
 
     # get dates of days meditated, from beeminder
-    beeminder_dates = beeminder_to_one_per_day(get_beeminder())
+    beeminder_dates = beeminder_to_one_per_timestamp(get_beeminder())
     print "%s datapoints in beeminder" % len(beeminder_dates)
 
     # get dates which beeminder doesn't know about yet
     bee_sorted = sorted(set(beeminder_dates))
-    # for d in bee_sorted:
-    #   print "bee sorted: %s" %d
-
     insight_sorted = sorted(set(insight_dates))
-    # for d in insight_sorted:
-    #   print "insight sorted: %s" %d
-
     inter = list(set(insight_dates) - set(beeminder_dates))
-    # for d in inter:
-    #   print "inter list date: %s" % d
+    new_data = sorted(list(set(insight_dates) - set(beeminder_dates)))
+    print "new dates len: %s" % len(new_data)
 
-    new_dates = sorted(list(set(insight_dates) - set(beeminder_dates)))
-    print "new dates len: %s" % len(new_dates)
-    # for d in new_dates:
-    #   print "date in new_dates: %s" % d
-
-    # create beeminder-friendly datapoints
-    new_datapoints = [{"timestamp": d, "value":1, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"} for d in new_dates]
-    # for d in new_datapoints:
-    #     print "datapoint in new_datapoints: %s" % d
-    print "%s datapoints to post" % len(new_datapoints)
-
-    # for dp in new_datapoints:
-    post_beeminder_entry({"timestamp": 1577419913, "value":1, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"})
+    for ts in new_data:
+      requestid = "insighttimer_%s" % ts
+      entry = {"timestamp": ts, "requestid": requestid, "value":1, "comment":"Zapier to Heroku to InsightsTimer to Beeminder"}
+      print "entry values %s" % entry
+      post_beeminder_entry(entry)

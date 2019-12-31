@@ -1,1 +1,1 @@
-web: python beesight.py
+worker: python beesight.py
