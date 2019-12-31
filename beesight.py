@@ -130,6 +130,6 @@ if __name__ == "__main__":
 
     for ts in new_data:
       requestid = "insighttimer_%s" % ts
-      entry = {"timestamp": ts, "requestid": requestid, "value":1, "comment":"Heroku to InsightsTimer to Beeminder"}
+      entry = {"timestamp": ts, "requestid": requestid, "value":1, "comment":"InsightsTimer to Heroku to Beeminder"}
       print "entry values %s" % entry
       post_beeminder_entry(entry)
