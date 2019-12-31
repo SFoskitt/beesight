@@ -2,17 +2,12 @@
 import ConfigParser
 import calendar
 import datetime
-import urllib
-import urllib2
+import os
 import requests
 import ssl
-import sys
 import simplejson
-import time
-
-# complain on config file issues
-# complain on bad login
-# don't hardcode timezone to japan
+import urllib
+import urllib2
 
 CONFIG_FILE_NAME = 'config.ini'
 INSIGHT_SECTION = 'insight'
@@ -26,11 +21,14 @@ BEE_GET_DATAPOINTS_URL = BEE_BASE_URL  + "users/%s/goals/%s/datapoints.json?auth
 BEE_POST_DATAPOINTS_URL = BEE_GET_DATAPOINTS_URL + "&timestamp=%s&value=%s&comment=%s&requestid=%s"
 
 def get_insight_data():
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(INSIGHT_SECTION, "INSIGHT_USERNAME")
-    password = config.get(INSIGHT_SECTION, "INSIGHT_PASSWORD")
+    # username = config.get(INSIGHT_SECTION, "INSIGHT_USERNAME")
+    # password = config.get(INSIGHT_SECTION, "INSIGHT_PASSWORD")
+
+    username = os.environ.get("INSIGHT_USERNAME")
+    password = os.environ.get("INSIGHT_PASSWORD")
 
     values = {'user_session[email]' : username,
               'user_session[password]' : password }
@@ -44,12 +42,16 @@ def get_insight_data():
     return arr
 
 def post_beeminder_entry(entry):
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
-    auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
-    goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
+    # username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
+    # auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
+    # goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
+
+    username = os.environ("BEEMINDER_USERNAME")
+    auth_token = os.environ("BEEMINDER_AUTH_TOKEN")
+    goal_name = os.environ("BEEMINDER_GOAL_NAME")
 
     session = requests.session()
     full_url = BEE_POST_DATAPOINTS_URL % (username, goal_name, auth_token, entry["timestamp"], entry["value"], entry["comment"], entry["requestid"])
@@ -59,12 +61,16 @@ def post_beeminder_entry(entry):
     print "Posted entry: %s" % r.text
 
 def get_beeminder():
-    config = ConfigParser.RawConfigParser()
-    config.read(CONFIG_FILE_NAME)
+    # config = ConfigParser.RawConfigParser()
+    # config.read(CONFIG_FILE_NAME)
 
-    username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
-    auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
-    goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
+    # username = config.get(BEEMINDER_SECTION, "BEEMINDER_USERNAME")
+    # auth_token = config.get(BEEMINDER_SECTION, "BEEMINDER_AUTH_TOKEN")
+    # goal_name = config.get(BEEMINDER_SECTION, "BEEMINDER_GOAL_NAME")
+    username = os.environ("BEEMINDER_USERNAME")
+    auth_token = os.environ("BEEMINDER_AUTH_TOKEN")
+    goal_name = os.environ("BEEMINDER_GOAL_NAME")
+
     bee_data_url = BEE_GET_DATAPOINTS_URL % (username, goal_name, auth_token)
 
     context = ssl._create_unverified_context()
